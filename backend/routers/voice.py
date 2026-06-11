@@ -9,15 +9,31 @@ router = APIRouter(prefix="/api/voice", tags=["voice"])
 async def upload_voice(audio: UploadFile = File(...)):
     try:
         audio_bytes = await audio.read()
+        print(f"收到音频: {len(audio_bytes)} 字节, 类型: {audio.content_type}")
+        
+        # 语音转文字
         raw_text = await speech_to_text(audio_bytes)
-        if not raw_text.strip():
-            return CommandResponse(success=False, error="未识别到语音内容，请重试")
+        
+        if not raw_text or not raw_text.strip():
+            return CommandResponse(
+                success=False, 
+                commands=[], 
+                raw_text="", 
+                error=f"未识别到语音内容(音频大小:{len(audio_bytes)}字节)，请大声一点重试"
+            )
+        
         commands_data = await text_to_commands(raw_text)
         commands = [
             DrawCommand(action=cmd["action"], params=cmd.get("params", {}))
             for cmd in commands_data
         ]
-        return CommandResponse(success=True, commands=commands, raw_text=raw_text)
+        
+        return CommandResponse(
+            success=True,
+            commands=commands,
+            raw_text=raw_text
+        )
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
