@@ -53,3 +53,5 @@ export function useMicrophone() {
     getAudioBlob
   }
 }
+
+// 支持 webm 格式录音
